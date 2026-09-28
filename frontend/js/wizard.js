@@ -34,14 +34,16 @@ class WizardController {
 
   async checkReadiness() {
     try {
-      const [sysStatus, ghStatus, templateRes, starters] = await Promise.all([
+      const [sysStatus, ghStatus, templateRes, starters, projects] = await Promise.all([
         api.getSystemStatus().catch(() => null),
         api.getGithubStatus().catch(() => null),
         api.getTemplate().catch(() => null),
-        api.getStarters().catch(() => [])
+        api.getStarters().catch(() => []),
+        api.getProjects().catch(() => [])
       ]);
 
       this.state.starters = starters || [];
+      this.state.projectsCount = projects?.length || 0;
 
       // 1. Antigravity check
       this.state.agyReady = !!(sysStatus?.agy?.installed && sysStatus?.agy?.outcome === 'success');
@@ -196,13 +198,18 @@ class WizardController {
             <div class="row-icon">${this.state.ghReady ? '✓' : '2'}</div>
             <div class="row-content">
               <strong class="row-title">GitHub connected</strong>
-              <p class="row-desc">${this.state.ghReady ? `Authenticated as @${this.state.ghUser || 'user'}. Projects can be indexed for evidence.` : 'Connect your GitHub account using GitHub CLI to index your repositories for evidence.'}</p>
-              ${!this.state.ghReady ? `
+              <p class="row-desc">${this.state.ghReady ? (this.state.projectsCount > 0 ? `Authenticated as @${this.state.ghUser || 'user'}. ${this.state.projectsCount} repositories indexed with evidence.` : `Authenticated as @${this.state.ghUser || 'user'}. No repositories indexed yet.`) : 'Connect your GitHub account using GitHub CLI to index your repositories for evidence.'}</p>
+              ${this.state.ghReady ? `
+                <div class="row-action" style="margin-top: 6px; display: flex; align-items: center; gap: 8px;">
+                  <button id="btn-wizard-sync-repos" class="btn btn-secondary btn-sm" onclick="window.wizardController.syncRepos(this)">${this.state.projectsCount > 0 ? 'Sync Repositories' : 'Sync Repositories Now'}</button>
+                  <span id="wizard-sync-status" class="text-muted" style="font-size: 12px;"></span>
+                </div>
+              ` : `
                 <div class="row-action">
                   <div class="terminal-command">gh auth login --web</div>
                   <button class="btn btn-secondary btn-sm" onclick="window.wizardController.recheck()">Recheck</button>
                 </div>
-              ` : ''}
+              `}
             </div>
             <div class="row-status">
               <span class="status-badge ${this.state.ghReady ? 'status-success' : 'status-neutral'}">${this.state.ghReady ? 'Connected' : 'Action needed'}</span>
@@ -299,6 +306,22 @@ class WizardController {
       this.renderWizardUI();
     } catch (e) {
       alert(`Could not read or save template: ${e.message}`);
+    }
+  }
+
+  async syncRepos(btn) {
+    if (btn) btn.disabled = true;
+    const statusEl = document.getElementById('wizard-sync-status');
+    if (statusEl) statusEl.textContent = 'Syncing repositories and scanning code...';
+    try {
+      const res = await api.syncGithub();
+      if (statusEl) statusEl.textContent = `Sync complete: ${res.indexed} indexed.`;
+      await this.checkReadiness();
+      this.renderWizardUI();
+    } catch (e) {
+      if (statusEl) statusEl.textContent = `Sync failed: ${e.message}`;
+    } finally {
+      if (btn) btn.disabled = false;
     }
   }
 }
