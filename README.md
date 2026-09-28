@@ -142,14 +142,14 @@ $$\mathcal{U}_{\text{allowable}} = \mathcal{K}_{\text{master}} \cup \bigcup_{p \
 
 The validation kernel enforces the projection operator $\Pi_{\mathcal{U}}$:
 
-$$\Pi_{\mathcal{U}}(\text{Tech}(R)) = \left\{ t \in \text{Tech}(R) \;\middle|\; \exists u \in \mathcal{U}_{\text{allowable}} : \text{norm}(t) = \text{norm}(u) \right\}$$
+$$\Pi_{\mathcal{U}}(\text{Tech}(R)) = \{\, t \in \text{Tech}(R) \mid \exists u \in \mathcal{U}_{\text{allowable}} : \text{norm}(t) = \text{norm}(u) \,\}$$
 
 Where:
 $$\text{norm}(x) = \text{trim}(\text{lowercase}(x))$$
 
 Any term $t \notin \mathcal{U}_{\text{allowable}}$ is rejected:
 
-$$\forall t \in \Big( \text{Tech}(R) \setminus \Pi_{\mathcal{U}}(\text{Tech}(R)) \Big) \implies \text{EmitToAuditLog}(t, \text{"unauthorized\_technology"})$$
+$$\forall t \in \Big( \text{Tech}(R) \setminus \Pi_{\mathcal{U}}(\text{Tech}(R)) \Big) \implies \text{RejectClaim}(t)$$
 
 ### 2. Metric Invariance & Scalar Grounding
 
