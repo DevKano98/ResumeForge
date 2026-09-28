@@ -8,6 +8,13 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    // Handle --version flag immediately
+    let args: Vec<String> = std::env::args().collect();
+    if args.iter().any(|a| a == "--version" || a == "-V" || a == "-v") {
+        println!("resumeforge {}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
+
     // Initialize tracing subscriber
     tracing_subscriber::registry()
         .with(

@@ -1,0 +1,18 @@
+<Configuration>
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>..</HostFolder>
+      <SandboxFolder>C:\resumeforge-src</SandboxFolder>
+      <ReadOnly>true</ReadOnly>
+    </MappedFolder>
+    <MappedFolder>
+      <HostFolder>.\logs</HostFolder>
+      <SandboxFolder>C:\resumeforge-logs</SandboxFolder>
+      <ReadOnly>false</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+  <LogonCommand>
+    <Command>powershell.exe -ExecutionPolicy Bypass -File C:\resumeforge-src\sandbox\sandbox-logon.ps1</Command>
+  </LogonCommand>
+  <Networking>Enable</Networking>
+</Configuration>
