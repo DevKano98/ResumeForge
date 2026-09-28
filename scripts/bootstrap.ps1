@@ -7,7 +7,7 @@ param(
     [switch]$FromSource
 )
 
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Continue'
 
 # 1. Project Directory Resolution
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -267,20 +267,31 @@ try {
 
 # 5. GitHub CLI Authentication
 Write-Host "`nChecking GitHub CLI authentication..." -ForegroundColor Cyan
-$ghStatus = & gh auth status 2>&1 | Out-String
+try {
+    $ghStatus = & gh auth status 2>&1 | Out-String
+} catch {
+    $ghStatus = $null
+}
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "[!] GitHub CLI is not authenticated." -ForegroundColor Yellow
-    Write-Host "Starting interactive web login (gh auth login --web)..." -ForegroundColor White
-    Write-Host "Each user signs in with their own GitHub account. ResumeForge never stores your token." -ForegroundColor Gray
-    & gh auth login --web -h github.com -p https -s repo,read:user
-    & gh auth setup-git
-    $ghStatus = & gh auth status 2>&1 | Out-String
-    if ($LASTEXITCODE -ne 0) {
-        throw "GitHub CLI authentication was not completed."
+    if (-not $Yes) {
+        Write-Host "[!] GitHub CLI is not authenticated." -ForegroundColor Yellow
+        Write-Host "Starting interactive web login (gh auth login --web)..." -ForegroundColor White
+        Write-Host "Each user signs in with their own GitHub account. ResumeForge never stores your token." -ForegroundColor Gray
+        & gh auth login --web -h github.com -p https -s repo,read:user
+        & gh auth setup-git
+        $ghStatus = & gh auth status 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 0) {
+            throw "GitHub CLI authentication was not completed."
+        }
+        Write-Host " [+] GitHub CLI is authenticated." -ForegroundColor Green
+    } else {
+        Write-Warning "GitHub CLI is not authenticated. Interactive login was skipped because -Yes was specified."
+        Write-Host "You can authenticate later with 'gh auth login --web' to sync private repositories." -ForegroundColor Gray
     }
+} else {
+    Write-Host " [+] GitHub CLI is authenticated." -ForegroundColor Green
 }
-Write-Host " [+] GitHub CLI is authenticated." -ForegroundColor Green
 
 # 6. Tectonic LaTeX Warm-up
 $tectonicCacheDir = $null
