@@ -654,7 +654,7 @@ pub fn validate_evidence(
                         let norm_m = crate::services::master_parser::normalize_str(named);
                         let norm_w = crate::services::master_parser::normalize_str(&w.title);
                         norm_w.contains(&norm_m) || norm_m.contains(&norm_w)
-                    }) || master_facts.current_summary.as_ref().map_or(false, |s| {
+                    }) || master_facts.current_summary.as_ref().is_some_and(|s| {
                         let norm_m = crate::services::master_parser::normalize_str(named);
                         let norm_s = crate::services::master_parser::normalize_str(s);
                         norm_s.contains(&norm_m)

@@ -241,9 +241,9 @@ pub fn replace_macro_argument(
         }
 
         // Find the opening brace '{'
-        let mut char_indices = source[after_macro_idx..].char_indices();
+        let char_indices = source[after_macro_idx..].char_indices();
         let mut open_brace_rel = None;
-        while let Some((i, ch)) = char_indices.next() {
+        for (i, ch) in char_indices {
             if ch.is_whitespace() {
                 continue;
             } else if ch == '{' {
@@ -563,14 +563,15 @@ mod tests {
     }
 
     fn ensure_test_toolchain_path() {
-        if let Ok(user) = std::env::var("USERPROFILE") {
-            let p = format!(
-                "{}\\AppData\\Local\\agy\\bin;{}\\w64devkit\\bin;{}",
-                user,
-                user,
-                std::env::var("PATH").unwrap_or_default()
-            );
-            std::env::set_var("PATH", p);
+        if let Ok(current_path) = std::env::var("PATH") {
+            let mut paths = std::env::split_paths(&current_path).collect::<Vec<_>>();
+            let tools_bin = std::path::PathBuf::from("tools").join("bin");
+            if tools_bin.exists() && !paths.contains(&tools_bin) {
+                paths.insert(0, tools_bin);
+                if let Ok(new_path) = std::env::join_paths(paths) {
+                    std::env::set_var("PATH", new_path);
+                }
+            }
         }
     }
 

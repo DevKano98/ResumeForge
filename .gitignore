@@ -11,11 +11,13 @@
 # Local runtime data & databases
 /data/
 *.db
+*.db*
 *.db-shm
 *.db-wal
 
 # Temporary build & compile files
 /temp/
+/.tmp/
 *.pdf
 *.aux
 *.log

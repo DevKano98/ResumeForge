@@ -84,7 +84,7 @@ pub fn build_generation_prompt(input: &ContentGenerationInput) -> String {
             }
         }
     }
-    p.push_str("\n");
+    p.push('\n');
 
     // Target Job Description Analysis
     p.push_str("## TARGET JOB DESCRIPTION ANALYSIS\n");
@@ -106,7 +106,7 @@ pub fn build_generation_prompt(input: &ContentGenerationInput) -> String {
             p.push_str(&format!("- {}\n", req));
         }
     }
-    p.push_str("\n");
+    p.push('\n');
 
     // Ranked Projects & Evidence
     p.push_str("## RANKED PROJECTS & FACTUAL EVIDENCE\n");
@@ -124,7 +124,7 @@ pub fn build_generation_prompt(input: &ContentGenerationInput) -> String {
                 ev.id, ev.source_file, ev.claim
             ));
         }
-        p.push_str("\n");
+        p.push('\n');
     }
 
     if let Some(instructions) = &input.extra_instructions {

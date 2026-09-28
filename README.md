@@ -7,7 +7,7 @@
 ## ⚡ Quickstart
 
 ```cmd
-git clone https://github.com/BirendraArchana/resumeforge.git
+git clone https://github.com/resumeforge/resumeforge.git
 cd resumeforge
 start.cmd
 ```

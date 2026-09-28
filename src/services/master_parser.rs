@@ -94,10 +94,9 @@ pub fn extract_balanced_macro_argument(tex: &str, macro_name: &str) -> Option<St
             }
         }
 
-        if let Some(close_idx) = close_pos {
+        {
+            let close_idx = close_pos?;
             return Some(body[open_pos + 1..close_idx].to_string());
-        } else {
-            return None;
         }
     }
 
@@ -137,7 +136,7 @@ pub fn clean_latex_markup(raw: &str) -> String {
     let bare_cmd_re = Regex::new(r"\\[a-zA-Z]+").unwrap();
     let cleaned = bare_cmd_re.replace_all(&cleaned, " ");
 
-    let cleaned = cleaned.replace('{', "").replace('}', "");
+    let cleaned = cleaned.replace(['{', '}'], "");
 
     let space_re = Regex::new(r"[ \t]+").unwrap();
     let lines: Vec<String> = cleaned
@@ -203,7 +202,7 @@ fn parse_contact(tex: &str) -> Option<String> {
             continue;
         }
         for chunk in trimmed.split('|') {
-            let clean_chunk = chunk.replace('{', "").replace('}', "");
+            let clean_chunk = chunk.replace(['{', '}'], "");
             let item = clean_chunk.trim().trim_matches('|').trim();
             if !item.is_empty() && item != name && !item.starts_with('\\') {
                 parts.push(item.to_string());
@@ -452,9 +451,9 @@ fn parse_education(tex: &str) -> Vec<EducationFact> {
                 .collect();
 
             if !bold_matches.is_empty() || !italic_matches.is_empty() {
-                let inst = bold_matches.get(0).cloned().unwrap_or_default();
+                let inst = bold_matches.first().cloned().unwrap_or_default();
                 let date_range = bold_matches.get(1).cloned();
-                let degree = italic_matches.get(0).cloned().unwrap_or_default();
+                let degree = italic_matches.first().cloned().unwrap_or_default();
                 let location = italic_matches.get(1).cloned();
                 if !inst.is_empty() || !degree.is_empty() {
                     entries.push(EducationFact {
@@ -496,8 +495,7 @@ pub fn check_master_parsing_warnings(tex: &str, facts: &MasterFacts) -> Vec<Stri
 /// Normalizes dates by replacing double dashes and extra whitespace.
 pub fn normalize_dates(s: &str) -> String {
     s.replace("--", "-")
-        .replace('–', "-")
-        .replace('—', "-")
+        .replace(['–', '—'], "-")
         .split_whitespace()
         .collect::<Vec<_>>()
         .join(" ")

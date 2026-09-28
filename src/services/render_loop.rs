@@ -182,6 +182,7 @@ pub fn drop_weakest_bullet(
 /// Also calculates content density percentage and assigns status:
 /// - 1 page, density >= 60% -> FinalResumeStatus::Ready
 /// - 1 page, density < 60% -> FinalResumeStatus::ReadySparse
+///
 /// If still >1 page after attempt 4 -> RenderLoopOutcome::PageLimitError
 pub async fn run_render_compile_loop(
     template: &str,

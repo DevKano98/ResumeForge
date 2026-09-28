@@ -27,6 +27,7 @@ pub async fn insert_resume(
     .await
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn update_resume_artifacts(
     pool: &SqlitePool,
     id: i64,

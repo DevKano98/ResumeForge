@@ -353,7 +353,7 @@ if ($FromSource -or (-not $serverExe)) {
         # Try to download latest release zip if available
         $releaseDownloaded = $false
         try {
-            $repo = "BirendraArchana/resumeforge"
+            $repo = "resumeforge/resumeforge"
             try {
                 $remote = & git remote get-url origin 2>$null
                 if ($remote -match 'github\.com[:/]([^/]+/[^/\.]+?)(?:\.git)?$') {

@@ -115,7 +115,7 @@ pub async fn adapt(content: &str) -> anyhow::Result<AdaptPreview> {
         additions.push(format!("+ \\{}{{ ... }}", names[slot]));
     }
     let mut adapted = content.to_string();
-    insertions.sort_by(|a, b| b.0.cmp(&a.0));
+    insertions.sort_by_key(|a| std::cmp::Reverse(a.0));
     for (position, addition) in insertions {
         adapted.insert_str(position, &addition);
     }

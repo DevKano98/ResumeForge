@@ -17,24 +17,12 @@ async fn main() -> anyhow::Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    // Ensure portable tools/bin and user bin directories are in PATH for child processes
+    // Executable lookup order: tools/bin next to the app, then PATH
     if let Ok(current_path) = std::env::var("PATH") {
         let mut paths = std::env::split_paths(&current_path).collect::<Vec<_>>();
         let tools_bin = std::path::PathBuf::from("tools").join("bin");
         if tools_bin.exists() && !paths.contains(&tools_bin) {
             paths.insert(0, tools_bin);
-        }
-        if cfg!(windows) {
-            if let Ok(user_profile) = std::env::var("USERPROFILE") {
-                let agy_pb = std::path::PathBuf::from(format!("{}\\AppData\\Local\\agy\\bin", user_profile));
-                let devkit_pb = std::path::PathBuf::from(format!("{}\\w64devkit\\bin", user_profile));
-                if !paths.contains(&agy_pb) && agy_pb.exists() {
-                    paths.insert(0, agy_pb);
-                }
-                if !paths.contains(&devkit_pb) && devkit_pb.exists() {
-                    paths.insert(0, devkit_pb);
-                }
-            }
         }
         if let Ok(new_path) = std::env::join_paths(paths) {
             std::env::set_var("PATH", new_path);
