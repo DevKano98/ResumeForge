@@ -15,6 +15,8 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 use std::path::Path;
 
+const MAX_TEMPLATE_CONTENT_BYTES: usize = 512 * 1024; // 512 KB
+
 #[derive(serde::Deserialize)]
 pub struct AdaptRequest {
     pub content: String,
@@ -24,6 +26,12 @@ pub async fn adapt_template(
     State(state): State<AppState>,
     Json(request): Json<AdaptRequest>,
 ) -> Result<Json<crate::services::template_adapt::AdaptPreview>, AppError> {
+    if request.content.len() > MAX_TEMPLATE_CONTENT_BYTES {
+        return Err(AppError::BadRequest(format!(
+            "Template content exceeds maximum allowed size of 512 KB (received {} bytes)",
+            request.content.len()
+        )));
+    }
     let preview = crate::services::template_adapt::adapt(&request.content)
         .await
         .map_err(|e| AppError::BadRequest(e.to_string()))?;
@@ -114,6 +122,12 @@ pub async fn save_master_template(
         return Err(AppError::BadRequest(
             "Template content cannot be empty".to_string(),
         ));
+    }
+    if payload.content.len() > MAX_TEMPLATE_CONTENT_BYTES {
+        return Err(AppError::BadRequest(format!(
+            "Template content exceeds maximum allowed size of 512 KB (received {} bytes)",
+            payload.content.len()
+        )));
     }
 
     // Basic LaTeX document validation

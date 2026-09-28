@@ -9,6 +9,9 @@ use axum::{
     Json,
 };
 
+const MAX_JOB_DESCRIPTION_BYTES: usize = 64 * 1024; // 64 KB
+const MAX_EXTRA_INSTRUCTIONS_BYTES: usize = 16 * 1024; // 16 KB
+
 /// POST /api/resumes
 /// Creates a queued resume and returns without waiting for compilation.
 pub async fn create_resume(
@@ -19,6 +22,20 @@ pub async fn create_resume(
         return Err(AppError::BadRequest(
             "Job description cannot be empty".to_string(),
         ));
+    }
+    if payload.job_description.len() > MAX_JOB_DESCRIPTION_BYTES {
+        return Err(AppError::BadRequest(format!(
+            "Job description exceeds maximum allowed size of 64 KB (received {} bytes)",
+            payload.job_description.len()
+        )));
+    }
+    if let Some(ref extra) = payload.extra_instructions {
+        if extra.len() > MAX_EXTRA_INSTRUCTIONS_BYTES {
+            return Err(AppError::BadRequest(format!(
+                "Extra instructions exceed maximum allowed size of 16 KB (received {} bytes)",
+                extra.len()
+            )));
+        }
     }
 
     let inserted = db_resumes::insert_resume(

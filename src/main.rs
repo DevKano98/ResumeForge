@@ -103,72 +103,76 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    // Initial boot capability probe for Antigravity (Section 6, requirement 6)
-    // Populates the shared in-memory cache once on startup so /api/system/status is sub-millisecond.
-    tracing::info!("Running initial Antigravity capability probe...");
-    let initial_probe =
-        services::pty_runner::run_agy_prompt("reply with the single word OK", 30).await;
-    let checked_at = chrono::Utc::now();
-    match initial_probe {
-        Ok(res) => {
-            let details = match &res.status {
-                services::pty_runner::AgyOutcome::Success => {
-                    format!(
-                        "Responded cleanly with '{}' in {}ms",
-                        res.response.trim(),
-                        res.elapsed_ms
-                    )
-                }
-                services::pty_runner::AgyOutcome::AiEmptyResponse => {
-                    "Process exited 0 but produced zero response bytes".to_string()
-                }
-                services::pty_runner::AgyOutcome::AiToolDenied => format!(
-                    "Unauthorized tool access denied: {}",
-                    res.denied_actions.join(", ")
-                ),
-                services::pty_runner::AgyOutcome::AiTimeout => {
-                    format!("Timed out after {}ms", res.elapsed_ms)
-                }
-                services::pty_runner::AgyOutcome::AiHung => {
-                    format!("Hung and terminated after {}ms", res.elapsed_ms)
-                }
-                services::pty_runner::AgyOutcome::AiInvalidJson => {
-                    "Produced invalid JSON".to_string()
-                }
-                services::pty_runner::AgyOutcome::AiError => res
-                    .error_detail
-                    .clone()
-                    .unwrap_or_else(|| "Process exited with error".to_string()),
-            };
+    // Initial boot capability probe for Antigravity (Section 6, requirement 6; Phase 3, requirement 8)
+    // Runs in the background so the server binds and listens immediately.
+    let agy_state = state.clone();
+    tokio::spawn(async move {
+        tracing::info!("Running initial Antigravity capability probe in background...");
+        let initial_probe =
+            services::pty_runner::run_agy_prompt("reply with the single word OK", 30).await;
+        let checked_at = chrono::Utc::now();
+        match initial_probe {
+            Ok(res) => {
+                let details = match &res.status {
+                    services::pty_runner::AgyOutcome::Success => {
+                        format!(
+                            "Responded cleanly with '{}' in {}ms",
+                            res.response.trim(),
+                            res.elapsed_ms
+                        )
+                    }
+                    services::pty_runner::AgyOutcome::AiEmptyResponse => {
+                        "Process exited 0 but produced zero response bytes".to_string()
+                    }
+                    services::pty_runner::AgyOutcome::AiToolDenied => format!(
+                        "Unauthorized tool access denied: {}",
+                        res.denied_actions.join(", ")
+                    ),
+                    services::pty_runner::AgyOutcome::AiTimeout => {
+                        format!("Timed out after {}ms", res.elapsed_ms)
+                    }
+                    services::pty_runner::AgyOutcome::AiHung => {
+                        format!("Hung and terminated after {}ms", res.elapsed_ms)
+                    }
+                    services::pty_runner::AgyOutcome::AiInvalidJson => {
+                        "Produced invalid JSON".to_string()
+                    }
+                    services::pty_runner::AgyOutcome::AiError => res
+                        .error_detail
+                        .clone()
+                        .unwrap_or_else(|| "Process exited with error".to_string()),
+                };
 
-            let cached = CachedAgyProbe {
-                outcome: res.status,
-                response: res.response,
-                elapsed_ms: res.elapsed_ms,
-                denied_actions: res.denied_actions,
-                details,
-                checked_at,
-            };
+                let cached = CachedAgyProbe {
+                    outcome: res.status,
+                    response: res.response,
+                    elapsed_ms: res.elapsed_ms,
+                    denied_actions: res.denied_actions,
+                    details,
+                    checked_at,
+                };
 
-            let mut cache = state.agy_cache.write().await;
-            *cache = Some(cached);
-            tracing::info!("Initial Antigravity probe cached successfully");
+                let mut cache = agy_state.agy_cache.write().await;
+                *cache = Some(cached);
+                tracing::info!("Initial Antigravity probe cached successfully");
+            }
+            Err(e) => {
+                tracing::warn!("Failed initial Antigravity probe: {}", e);
+            }
         }
-        Err(e) => {
-            tracing::warn!("Failed initial Antigravity probe: {}", e);
-        }
-    }
+    });
 
     let app = routes::create_router(state);
 
-    tracing::info!("ResumeForge server starting on http://{}", addr);
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    let local_addr = listener.local_addr()?;
+    tracing::info!("ResumeForge server listening on http://{}", local_addr);
 
     let shutdown_signal = async {
         let _ = tokio::signal::ctrl_c().await;
         tracing::info!("Received shutdown signal, stopping ResumeForge...");
     };
 
-    let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal)
         .await?;

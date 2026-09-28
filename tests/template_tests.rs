@@ -60,6 +60,7 @@ async fn test_template_validation_and_history() -> anyhow::Result<()> {
     let router = create_router(state.clone());
     let req = Request::builder()
         .uri("/api/templates/starters")
+        .header("Host", "localhost:3000")
         .body(Body::empty())?;
     let resp = router.oneshot(req).await?;
     assert_eq!(resp.status(), StatusCode::OK);
@@ -71,6 +72,7 @@ async fn test_template_validation_and_history() -> anyhow::Result<()> {
     let router = create_router(state.clone());
     let req = Request::builder()
         .uri("/api/template")
+        .header("Host", "localhost:3000")
         .body(Body::empty())?;
     let resp = router.oneshot(req).await?;
     assert_eq!(resp.status(), StatusCode::OK);
@@ -83,6 +85,8 @@ async fn test_template_validation_and_history() -> anyhow::Result<()> {
     let req = Request::builder()
         .method("POST")
         .uri("/api/template")
+        .header("Host", "localhost:3000")
+        .header("Origin", "http://localhost:3000")
         .header("Content-Type", "application/json")
         .body(Body::from(json!({ "content": "   " }).to_string()))?;
     let resp = router.oneshot(req).await?;
@@ -98,6 +102,8 @@ Missing ResumeSummary macro!
     let req = Request::builder()
         .method("POST")
         .uri("/api/template")
+        .header("Host", "localhost:3000")
+        .header("Origin", "http://localhost:3000")
         .header("Content-Type", "application/json")
         .body(Body::from(json!({ "content": invalid_macro_tex }).to_string()))?;
     let resp = router.oneshot(req).await?;
@@ -109,6 +115,8 @@ Missing ResumeSummary macro!
     let req = Request::builder()
         .method("POST")
         .uri("/api/template")
+        .header("Host", "localhost:3000")
+        .header("Origin", "http://localhost:3000")
         .header("Content-Type", "application/json")
         .body(Body::from(json!({ "content": classic_src, "is_starter_template": true }).to_string()))?;
     let resp = router.oneshot(req).await?;
@@ -118,6 +126,7 @@ Missing ResumeSummary macro!
     let router = create_router(state.clone());
     let req = Request::builder()
         .uri("/api/template")
+        .header("Host", "localhost:3000")
         .body(Body::empty())?;
     let resp = router.oneshot(req).await?;
     let bytes = to_bytes(resp.into_body(), usize::MAX).await?;
@@ -129,6 +138,7 @@ Missing ResumeSummary macro!
     let router = create_router(state.clone());
     let req = Request::builder()
         .uri("/api/master/history")
+        .header("Host", "localhost:3000")
         .body(Body::empty())?;
     let resp = router.oneshot(req).await?;
     assert_eq!(resp.status(), StatusCode::OK);
