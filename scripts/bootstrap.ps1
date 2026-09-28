@@ -1,4 +1,4 @@
-# scripts/bootstrap.ps1 — Single-command zero-config launcher for ResumeForge
+# scripts/bootstrap.ps1 - Single-command zero-config launcher for ResumeForge
 [CmdletBinding()]
 param(
     [switch]$Yes,
@@ -139,7 +139,7 @@ foreach ($tool in $toolDefs) {
     if (-not $isInstalled) {
         $missingTools += $tool
     } else {
-        Write-Host " [✓] $($tool.Name) ($($tool.Version)) is already installed." -ForegroundColor Green
+        Write-Host " [+] $($tool.Name) ($($tool.Version)) is already installed." -ForegroundColor Green
     }
 }
 
@@ -147,7 +147,7 @@ if ($missingTools.Count -gt 0) {
     Write-Host "`nRequired portable command-line tools need to be installed:" -ForegroundColor Yellow
     Write-Host "Target directory: $toolsBin (local to repository, no admin rights required)`n"
     foreach ($m in $missingTools) {
-        Write-Host "  • $($m.Name) ($($m.Version))"
+        Write-Host "  - $($m.Name) ($($m.Version))"
         Write-Host "    Download: $($m.Url)"
         Write-Host "    SHA256:   $($m.Sha256)"
     }
@@ -207,7 +207,7 @@ if ($missingTools.Count -gt 0) {
         $state.tools | Add-Member -MemberType NoteProperty -Name $tool.Name -Value $tool.Version -Force
         Save-SetupState $state
 
-        Write-Host " [✓] $($tool.Name) installed to tools\bin\$($tool.Exe)" -ForegroundColor Green
+        Write-Host " [+] $($tool.Name) installed to tools\bin\$($tool.Exe)" -ForegroundColor Green
     }
 
     if (Test-Path -LiteralPath $toolsTemp) {
@@ -250,14 +250,14 @@ if (-not $agyCmd) {
     }
 }
 
-Write-Host " [✓] agy found at $($agyCmd.Source)" -ForegroundColor Green
+Write-Host " [+] agy found at $($agyCmd.Source)" -ForegroundColor Green
 
 # Quick headless probe
 Write-Host "Probing Antigravity model response..." -ForegroundColor Cyan
 try {
     $probeRes = & agy -p "reply with the single word OK" 2>&1 | Out-String
     if ($LASTEXITCODE -eq 0 -and ($probeRes -match "OK|ok")) {
-        Write-Host " [✓] Antigravity probe passed cleanly." -ForegroundColor Green
+        Write-Host " [+] Antigravity probe passed cleanly." -ForegroundColor Green
     } else {
         Write-Warning "Antigravity probe warning (exit code $LASTEXITCODE): $probeRes"
     }
@@ -280,7 +280,7 @@ if ($LASTEXITCODE -ne 0) {
         throw "GitHub CLI authentication was not completed."
     }
 }
-Write-Host " [✓] GitHub CLI is authenticated." -ForegroundColor Green
+Write-Host " [+] GitHub CLI is authenticated." -ForegroundColor Green
 
 # 6. Tectonic LaTeX Warm-up
 $tectonicCacheDir = $null
@@ -306,7 +306,7 @@ if (-not $isWarmed) {
         if (Test-Path -LiteralPath $warmupPdf) {
             $state.tectonic_warmed = $true
             Save-SetupState $state
-            Write-Host " [✓] Tectonic LaTeX bundle downloaded and cached successfully." -ForegroundColor Green
+            Write-Host " [+] Tectonic LaTeX bundle downloaded and cached successfully." -ForegroundColor Green
         } else {
             Write-Warning "Tectonic warmup completed without creating PDF."
         }
@@ -316,7 +316,7 @@ if (-not $isWarmed) {
         if (Test-Path -LiteralPath $warmupDir) { Remove-Item -LiteralPath $warmupDir -Recurse -Force }
     }
 } else {
-    Write-Host " [✓] Tectonic LaTeX bundle is cached." -ForegroundColor Green
+    Write-Host " [+] Tectonic LaTeX bundle is cached." -ForegroundColor Green
 }
 
 # 7. ResumeForge Binary Resolution
@@ -345,7 +345,7 @@ if ($FromSource -or (-not $serverExe)) {
             $repo = "BirendraArchana/resumeforge"
             try {
                 $remote = & git remote get-url origin 2>$null
-                if ($remote -match "github\.com[:/]([^/]+/[^/\.]+?)(?:\.git)?$") {
+                if ($remote -match 'github\.com[:/]([^/]+/[^/\.]+?)(?:\.git)?$') {
                     $repo = $matches[1]
                 }
             } catch {}
@@ -389,7 +389,7 @@ if ($FromSource -or (-not $serverExe)) {
                     $state.binary_ready = $true
                     $state.binary_source = "downloaded"
                     Save-SetupState $state
-                    Write-Host " [✓] Downloaded and verified ResumeForge release binary." -ForegroundColor Green
+                    Write-Host " [+] Downloaded and verified ResumeForge release binary." -ForegroundColor Green
                 } else {
                     Remove-Item -LiteralPath $tempExtract -Recurse -Force
                     throw "Could not find resumeforge.exe in downloaded release zip."
@@ -446,11 +446,11 @@ if ($FromSource -or (-not $serverExe)) {
         $state.binary_ready = $true
         $state.binary_source = "from_source"
         Save-SetupState $state
-        Write-Host " [✓] Build completed successfully." -ForegroundColor Green
+        Write-Host " [+] Build completed successfully." -ForegroundColor Green
     }
 }
 
-Write-Host " [✓] Using binary: $serverExe" -ForegroundColor Green
+Write-Host " [+] Using binary: $serverExe" -ForegroundColor Green
 
 # 8. Start ResumeForge Server
 function Test-PortAvailable([int]$port) {
