@@ -67,7 +67,8 @@ fn run_agy_prompt_inner(
         pixel_height: 0,
     })?;
 
-    let mut cmd = CommandBuilder::new("agy");
+    let agy_bin = std::env::var("RESUMEFORGE_AGY_BIN").unwrap_or_else(|_| "agy".to_string());
+    let mut cmd = CommandBuilder::new(agy_bin);
     cmd.arg("-p");
     cmd.arg(prompt);
     cmd.arg("--output-format");

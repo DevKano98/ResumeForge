@@ -587,7 +587,7 @@ try {
         }
         try {
             $req = [System.Net.HttpWebRequest]::Create($healthUrl)
-            $req.Headers.Add("Host", "127.0.0.1:$targetPort")
+            $req.Host = "127.0.0.1:$targetPort"
             $req.Timeout = 1000
             $res = $req.GetResponse()
             if ([int]$res.StatusCode -eq 200) {
