@@ -101,7 +101,8 @@ const LABELS = {
     },
     ai_timeout: {
       what: "The writing process took too long",
-      why: "The Antigravity response exceeded the allowed time limit (30s).",
+      // why is built dynamically using timeout_secs — see formatErrorExplanationWithDetail
+      why: "The Antigravity response exceeded the allowed time limit.",
       next: "Check your internet connection, then click 'Regenerate'."
     },
     ai_hung: {
@@ -113,6 +114,21 @@ const LABELS = {
       what: "The draft formatting could not be read",
       why: "The AI output could not be parsed into the required resume schema.",
       next: "Click 'Regenerate' to produce a clean draft."
+    },
+    ai_tool_denied: {
+      what: "A required tool call was blocked",
+      why: "The Antigravity security policy denied a tool action needed to generate your resume.",
+      next: "Check your Antigravity tool permissions and click 'Regenerate'."
+    },
+    ai_error: {
+      what: "The AI agent returned an error",
+      why: "The Antigravity process reported an internal error during resume generation.",
+      next: "Click 'Regenerate'. If this persists, restart the server and try again."
+    },
+    github_error: {
+      what: "Could not read your repositories",
+      why: "ResumeForge was unable to fetch project data from GitHub.",
+      next: "Check your GitHub connection in Settings and click 'Regenerate'."
     },
     validation_error: {
       what: "Resume facts could not be verified",
@@ -162,17 +178,34 @@ function formatResumeStatus(status) {
 
 // Helper: Get friendly error explanation
 function formatErrorExplanation(errorStage, errorDetail) {
+  return formatErrorExplanationWithDetail(errorStage, errorDetail, null);
+}
+
+// Helper: Get friendly error explanation with optional dynamic fields from backend payload
+// extraFields: { timeout_secs?: number }
+function formatErrorExplanationWithDetail(errorStage, errorDetail, extraFields) {
   const errKey = (errorStage || "").toLowerCase();
+  let match = null;
   for (const [key, val] of Object.entries(LABELS.errors)) {
     if (errKey.includes(key) || (errorDetail && errorDetail.toLowerCase().includes(key))) {
-      return val;
+      match = val;
+      break;
     }
   }
-  return {
-    what: "Resume generation stopped",
-    why: errorDetail || "A processing step could not be completed.",
-    next: "Click 'Regenerate' to run the generation again, or check Settings."
-  };
+  if (!match) {
+    match = {
+      what: "Resume generation stopped",
+      why: errorDetail || "A processing step could not be completed.",
+      next: "Click 'Regenerate' to run the generation again, or check Settings."
+    };
+  }
+  // Substitute dynamic timeout into ai_timeout why-string
+  if (errKey.includes("ai_timeout") && extraFields?.timeout_secs) {
+    return Object.assign({}, match, {
+      why: `The Antigravity response exceeded the allowed time limit (${extraFields.timeout_secs}s).`
+    });
+  }
+  return match;
 }
 
 // Helper: Clean plain-language evidence explanation

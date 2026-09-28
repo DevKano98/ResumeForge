@@ -29,27 +29,27 @@ class CanvasController {
 
     this.nodes = {
       jd_analysis: {
-        x: 40, y: 140, w: 230, h: 105,
+        x: 40, y: 140, w: 240, h: 96,
         state: "idle", statusText: "Waiting to read requirements",
         startTime: null, elapsed: 0, events: [], outputs: null, summary: null
       },
       project_retrieval: {
-        x: 320, y: 140, w: 230, h: 105,
+        x: 320, y: 140, w: 240, h: 96,
         state: "idle", statusText: "Waiting to rank projects",
         startTime: null, elapsed: 0, events: [], outputs: null, summary: null
       },
       content_generation: {
-        x: 600, y: 140, w: 230, h: 105,
+        x: 600, y: 140, w: 240, h: 96,
         state: "idle", statusText: "Waiting to draft bullets",
         startTime: null, elapsed: 0, events: [], outputs: null, summary: null
       },
       evidence_validation: {
-        x: 880, y: 140, w: 230, h: 105,
+        x: 880, y: 140, w: 240, h: 96,
         state: "idle", statusText: "Waiting to verify claims",
         startTime: null, elapsed: 0, events: [], outputs: null, summary: null
       },
       render_compile: {
-        x: 1160, y: 140, w: 230, h: 105,
+        x: 1160, y: 140, w: 240, h: 96,
         state: "idle", statusText: "Waiting to compile", attempt: 0,
         startTime: null, elapsed: 0, events: [], outputs: null, summary: null
       }
@@ -68,11 +68,20 @@ class CanvasController {
   renderCanvasSkeleton() {
     this.container.innerHTML = `
       <div class="canvas-wrapper">
-        <svg id="canvas-svg" width="100%" height="100%">
+      <svg id="canvas-svg" width="100%" height="100%">
           <defs>
             <pattern id="canvas-dot-grid" width="24" height="24" patternUnits="userSpaceOnUse">
               <circle cx="2" cy="2" r="1.2" fill="#cbd5e1" />
             </pattern>
+            <marker id="arrow-default" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L8,3 z" fill="#94a3b8" />
+            </marker>
+            <marker id="arrow-active" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L8,3 z" fill="#3b82f6" />
+            </marker>
+            <marker id="arrow-complete" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L8,3 z" fill="#22c55e" />
+            </marker>
           </defs>
           <rect id="canvas-bg" width="100%" height="100%" fill="url(#canvas-dot-grid)" />
           <g id="canvas-viewport" transform="translate(${this.panX}, ${this.panY}) scale(${this.scale})">
@@ -193,12 +202,7 @@ class CanvasController {
     // Zoom toolbar buttons
     document.getElementById('btn-zoom-in')?.addEventListener('click', () => this.zoom(1.15));
     document.getElementById('btn-zoom-out')?.addEventListener('click', () => this.zoom(0.85));
-    document.getElementById('btn-zoom-reset')?.addEventListener('click', () => {
-      this.panX = 30;
-      this.panY = 40;
-      this.scale = 0.95;
-      this.updateViewportTransform();
-    });
+    document.getElementById('btn-zoom-reset')?.addEventListener('click', () => this.fitToView());
 
     // Drawer tab switching
     this.drawer.querySelectorAll('.drawer-tab').forEach(btn => {
@@ -226,6 +230,33 @@ class CanvasController {
 
   zoom(factor) {
     this.scale = Math.min(Math.max(this.scale * factor, 0.45), 2.2);
+    this.updateViewportTransform();
+  }
+
+  // Compute scale and pan so all 5 nodes fill the viewport with 40px padding
+  fitToView() {
+    const PADDING = 40;
+    const svgRect = this.svg?.getBoundingClientRect();
+    const vpW = svgRect ? svgRect.width : 1200;
+    const vpH = svgRect ? svgRect.height : 600;
+
+    // Content bounding box across all nodes
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    this.nodeOrder.forEach(key => {
+      const n = this.nodes[key];
+      minX = Math.min(minX, n.x);
+      minY = Math.min(minY, n.y);
+      maxX = Math.max(maxX, n.x + n.w);
+      maxY = Math.max(maxY, n.y + n.h);
+    });
+
+    const contentW = maxX - minX;
+    const contentH = maxY - minY;
+    const scaleX = (vpW - PADDING * 2) / contentW;
+    const scaleY = (vpH - PADDING * 2) / contentH;
+    this.scale = Math.min(Math.max(Math.min(scaleX, scaleY), 0.45), 2.2);
+    this.panX = PADDING - minX * this.scale;
+    this.panY = PADDING - minY * this.scale;
     this.updateViewportTransform();
   }
 
@@ -355,16 +386,21 @@ class CanvasController {
 
       // Connector state: active (animated dash) while data is flowing
       let cls = "canvas-connector";
+      let arrowId = "arrow-default";
       if (src.state === 'running' || (src.state === 'complete' && dst.state === 'running')) {
         cls += " active-flow";
+        arrowId = "arrow-active";
       } else if (src.state === 'complete' && dst.state === 'complete') {
         cls += " completed-flow";
+        arrowId = "arrow-complete";
       }
       path.setAttribute("class", cls);
       path.setAttribute("id", `conn-${srcKey}-${dstKey}`);
+      path.setAttribute("marker-end", `url(#${arrowId})`);
       this.connectorsG.appendChild(path);
     }
   }
+
 
   selectNode(nodeKey) {
     this.selectedNodeKey = nodeKey;
@@ -476,79 +512,16 @@ class CanvasController {
     this.renderNodes();
   }
 
-  // Handle incoming CanvasEvent
+  // Handle incoming CanvasEvent — delegates to pure reducer
   handleEvent(event) {
     const nodeKey = event.node;
     if (!this.nodes[nodeKey]) return;
 
-    const node = this.nodes[nodeKey];
-    node.events.push(event);
+    this.nodes[nodeKey] = canvasReducer(this.nodes[nodeKey], event);
+    this.nodes[nodeKey].events.push(event);
 
-    switch (event.type) {
-      case 'command_started':
-      case 'node_started':
-        node.state = 'running';
-        node.statusText = getNodeInfo(nodeKey).activeStatus;
-        if (!node.startTime) node.startTime = Date.now();
-        break;
-
-      case 'step_update':
-        if (event.payload?.message) {
-          node.statusText = event.payload.message;
-        } else if (event.payload?.delta) {
-          node.statusText = event.payload.delta;
-        }
-        if (event.payload?.attempt) {
-          node.attempt = event.payload.attempt;
-        }
-        break;
-
-      case 'command_output':
-        if (event.payload?.chunk) {
-          node.statusText = event.payload.chunk.slice(-45);
-        }
-        break;
-
-      case 'artifact_produced':
-        node.outputs = event.payload;
-        if (event.payload?.ranked_projects) {
-          node.summary = `Selected ${event.payload.ranked_projects.length} relevant repositories.`;
-        } else if (event.payload?.summary) {
-          node.summary = `Drafted targeted resume content.`;
-        }
-        break;
-
-      case 'node_warning':
-        if (event.payload?.warning) {
-          node.statusText = event.payload.warning;
-          node.summary = event.payload.warning;
-        }
-        break;
-
-      case 'node_done':
-        node.state = 'complete';
-        node.statusText = getNodeInfo(nodeKey).completeStatus;
-        if (event.payload) {
-          node.outputs = Object.assign(node.outputs || {}, event.payload);
-          if (event.payload.page_count) {
-            node.statusText = `Fitted to 1 page (${event.payload.attempts_used || 1} attempts)`;
-            node.summary = `Successfully formatted and compacted to exactly 1 page.`;
-          } else if (event.payload.accepted !== undefined) {
-            node.summary = `Verified ${event.payload.accepted} facts (${event.payload.rejected || 0} ungrounded claims removed).`;
-          }
-        }
-        break;
-
-      case 'node_error':
-        node.state = 'error';
-        node.statusText = event.payload?.error || "Stage encountered an error";
-        node.summary = event.payload?.error || "Error";
-        break;
-
-      case 'result':
-        // Final completion
-        this.onPipelineComplete(event.payload);
-        break;
+    if (event.type === 'result') {
+      this.onPipelineComplete(event.payload);
     }
 
     this.renderNodes();
@@ -792,6 +765,104 @@ class CanvasController {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   }
+}
+
+/**
+ * Pure canvas state reducer — no DOM dependencies.
+ * Takes an immutable copy of a single node's state and an event,
+ * returns a new node state object. Does NOT mutate `nodeState`.
+ *
+ * @param {object} nodeState  - current node state (state, statusText, …)
+ * @param {object} event      - {type, node, payload?, ts?}
+ * @returns {object}          - next node state
+ */
+function canvasReducer(nodeState, event) {
+  // Shallow-clone so callers always get a new reference on change
+  const next = Object.assign({}, nodeState);
+  const nodeKey = event.node;
+
+  switch (event.type) {
+    case 'command_started':
+    case 'node_started':
+      next.state = 'running';
+      next.statusText = getNodeInfo(nodeKey).activeStatus;
+      if (!next.startTime) next.startTime = Date.now();
+      break;
+
+    case 'step_update':
+      if (event.payload?.message) {
+        next.statusText = event.payload.message;
+      } else if (event.payload?.delta) {
+        next.statusText = event.payload.delta;
+      }
+      if (event.payload?.attempt) {
+        next.attempt = event.payload.attempt;
+      }
+      break;
+
+    case 'command_output':
+      if (event.payload?.chunk) {
+        next.statusText = event.payload.chunk.slice(-45);
+      }
+      break;
+
+    case 'artifact_produced':
+      next.outputs = event.payload;
+      if (event.payload?.ranked_projects) {
+        next.summary = `Selected ${event.payload.ranked_projects.length} relevant repositories.`;
+      } else if (event.payload?.summary) {
+        next.summary = `Drafted targeted resume content.`;
+      }
+      break;
+
+    case 'node_warning':
+      if (event.payload?.warning) {
+        next.statusText = event.payload.warning;
+        next.summary = event.payload.warning;
+      }
+      break;
+
+    case 'node_done':
+      next.state = 'complete';
+      next.statusText = getNodeInfo(nodeKey).completeStatus;
+      if (event.payload) {
+        next.outputs = Object.assign(next.outputs || {}, event.payload);
+        if (event.payload.page_count) {
+          next.statusText = `Fitted to 1 page (${event.payload.attempts_used || 1} attempts)`;
+          next.summary = `Successfully formatted and compacted to exactly 1 page.`;
+        } else if (event.payload.accepted !== undefined) {
+          next.summary = `Verified ${event.payload.accepted} facts (${event.payload.rejected || 0} ungrounded claims removed).`;
+        }
+      }
+      break;
+
+    case 'node_error': {
+      // Backend payload: { stage, detail, timeout_secs? }
+      const detail = event.payload?.detail || event.payload?.error || "Stage encountered an error";
+      const errorInfo = (typeof formatErrorExplanationWithDetail === 'function')
+        ? formatErrorExplanationWithDetail(event.payload?.stage || nodeKey, detail, { timeout_secs: event.payload?.timeout_secs })
+        : { what: detail, why: detail, next: "Click 'Regenerate' to try again." };
+      next.state = 'error';
+      next.statusText = errorInfo.what;
+      next.summary = detail;
+      next.errorExplanation = errorInfo;
+      break;
+    }
+
+    case 'result':
+      // Handled by caller (triggers onPipelineComplete), no node state change
+      break;
+
+    default:
+      break;
+  }
+
+  return next;
+}
+
+// Expose for unit tests (Node.js) and for CanvasController
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { canvasReducer };
 }
 
 window.canvasController = new CanvasController();
