@@ -52,7 +52,7 @@ pub fn start_worker(
                     match update {
                         Ok(done) if done.rows_affected() > 0 => {
                             let _ = event_bus::emit_event(&db, &bus, id, err.stage, "node_error",
-                                serde_json::json!({"stage": err.status, "detail": err.detail})).await;
+                                serde_json::json!({"stage": err.status, "detail": err.detail, "timeout_secs": err.timeout_secs})).await;
                         }
                         Ok(_) => {}
                         Err(update_err) => tracing::error!(resume_id = id, error = %update_err, "Could not record generation failure"),

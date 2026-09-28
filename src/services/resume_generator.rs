@@ -12,6 +12,7 @@ pub struct GenerationFailure {
     pub status: &'static str,
     pub stage: &'static str,
     pub detail: String,
+    pub timeout_secs: Option<u64>,
 }
 
 impl fmt::Display for GenerationFailure {
@@ -20,11 +21,26 @@ impl fmt::Display for GenerationFailure {
     }
 }
 
-fn failure(status: &'static str, stage: &'static str, err: impl fmt::Display) -> GenerationFailure {
+pub fn failure(status: &'static str, stage: &'static str, err: impl fmt::Display) -> GenerationFailure {
     GenerationFailure {
         status,
         stage,
         detail: err.to_string(),
+        timeout_secs: None,
+    }
+}
+
+pub fn failure_with_timeout(
+    status: &'static str,
+    stage: &'static str,
+    err: impl fmt::Display,
+    timeout_secs: Option<u64>,
+) -> GenerationFailure {
+    GenerationFailure {
+        status,
+        stage,
+        detail: err.to_string(),
+        timeout_secs,
     }
 }
 
@@ -210,8 +226,8 @@ pub async fn run(
         antigravity::ContentGenError::AiEmptyResponse => {
             failure("ai_empty_response", "content_generation", err)
         }
-        antigravity::ContentGenError::AiTimeout(_) => {
-            failure("ai_timeout", "content_generation", err)
+        antigravity::ContentGenError::AiTimeout(t) => {
+            failure_with_timeout("ai_timeout", "content_generation", err, Some(t))
         }
         antigravity::ContentGenError::AiHung => failure("ai_hung", "content_generation", err),
         antigravity::ContentGenError::AiInvalidJson(_) => {
