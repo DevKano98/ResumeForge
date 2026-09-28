@@ -70,17 +70,17 @@ flowchart TD
     subgraph Tier6 ["Typesetting Engine & Knuth-Plass Layout Loop"]
         ASTHydration["AST-to-TeX Syntax Transformation Engine"]:::typeset
         TectonicKernel["Embedded Tectonic XeTeX Engine (In-Memory VFS)"]:::typeset
-        PageAnalyzer["Bounding Box & Overfull / Underfull \vbox Analyzer"]:::typeset
+        PageAnalyzer["Bounding Box & Overfull / Underfull vbox Analyzer"]:::typeset
         MicroCompaction["Iterative Shrink State Machine (Passes 1..4)"]:::typeset
         VocabGuard --> ASTHydration --> MicroCompaction
         MicroCompaction --> TectonicKernel --> PageAnalyzer
-        PageAnalyzer -- "\vbox > 792pt" --> MicroCompaction
+        PageAnalyzer -- "vbox > 792pt" --> MicroCompaction
     end
 
     subgraph Tier7 ["Storage Architecture & Atomicity Engine"]
         SQLiteEngine[("SQLite 3.45 (Write-Ahead Logging / PRAGMA foreign_keys=1)")]:::storage
         ArtifactStore[("Zero-Copy Memory-Mapped Buffer Storage")]:::storage
-        PageAnalyzer -- "\vbox ≤ 792pt" --> ArtifactStore
+        PageAnalyzer -- "vbox ≤ 792pt" --> ArtifactStore
         ProofLattice -.-> SQLiteEngine
     end
 ```
@@ -89,7 +89,48 @@ flowchart TD
 
 ## 🧮 Mathematical Formalism: The Anti-Hallucination Lattice
 
-ResumeForge maps the synthesis problem onto a bounded lattice framework. Let $\mathcal{T}$ denote the set of all technological strings, $\mathcal{M}$ denote the domain of all numerical, metric, and percentage scalar claims, and $\mathcal{E}$ represent experiential historical facts.
+ResumeForge models fact-grounding using an abstract interpretation framework over Galois connections.
+
+Let $\mathcal{C} = \mathcal{P}(\text{Facts})$ denote the concrete domain of verifiable atomic statements, ordered by subset inclusion $\subseteq$. Let $\mathcal{A} = \langle \mathcal{L}, \sqsubseteq, \sqcup, \sqcap, \bot, \top \rangle$ be the abstract domain of technological, experiential, and metric assertions.
+
+```mermaid
+flowchart TD
+    classDef concrete fill:#0f172a,stroke:#38bdf8,stroke-width:1px,color:#f8fafc;
+    classDef bridge fill:#1e1b4b,stroke:#818cf8,stroke-width:1px,color:#f8fafc;
+    classDef lattice fill:#022c22,stroke:#34d399,stroke-width:1px,color:#f8fafc;
+    classDef reject fill:#450a0a,stroke:#f87171,stroke-width:1px,color:#f8fafc;
+
+    subgraph ConcreteDomain ["Concrete Evidence Domain: C = ⟨P(Facts), ⊆⟩"]
+        MasterFacts["Master Resume Fact AST (K_master)"]:::concrete
+        GitCodebase["Verified Git Abstract Syntax Trees (E_git)"]:::concrete
+        ConcreteSpace["Concrete Observable Invariants Space"]:::concrete
+        MasterFacts --> ConcreteSpace
+        GitCodebase --> ConcreteSpace
+    end
+
+    subgraph GaloisBridge ["Galois Adjunction: ⟨C, α, γ, A⟩"]
+        Alpha["α: Abstraction Function (Concrete to Bounded Semantic Types)"]:::bridge
+        Gamma["γ: Concretization Function (Abstract Properties to Grounded Sets)"]:::bridge
+        ConcreteSpace -- "α (Abstraction)" --> AbstractDomain
+        AbstractDomain -- "γ (Concretization)" --> ConcreteSpace
+    end
+
+    subgraph AbstractDomain ["Abstract Proof Lattice: A = ⟨L, ⊑, ⊔, ⊓, ⊥, ⊤⟩"]
+        Top["⊤ : Unconstrained Stochastic Output Space"]:::lattice
+        TechSemilattice["U_allowable : Closed Technology Semilattice"]:::lattice
+        MetricIntervals["M_bounded : Extracted Scalar Interval Domain"]:::lattice
+        HistoryPowerSet["E_grounded : Employer & Chronology Equivalence Classes"]:::lattice
+        Bottom["⊥ : Inadmissible Proposition State (evidence.json rejected[])"]:::reject
+
+        Top --> TechSemilattice
+        Top --> MetricIntervals
+        Top --> HistoryPowerSet
+
+        TechSemilattice -- "Term ∉ U_allowable" --> Bottom
+        MetricIntervals -- "Scalar ∉ MasterHighlight" --> Bottom
+        HistoryPowerSet -- "Company ∉ MasterHistory" --> Bottom
+    end
+```
 
 ### 1. The Closed Technology Vocabulary Invariant
 
@@ -112,7 +153,7 @@ $$\forall t \in \Big( \text{Tech}(R) \setminus \Pi_{\mathcal{U}}(\text{Tech}(R))
 
 ### 2. Metric Invariance & Scalar Grounding
 
-For any bullet $b \in \text{ExperienceBullets}(R)$, let $\mathcal{M}(b)$ denote the set of numbers, percentages, and performance multipliers extracted via regular expressions.
+For any bullet $b \in \text{ExperienceBullets}(R)$, let $\mathcal{M}(b)$ denote the set of numbers, percentages, and performance multipliers extracted via regular expressions:
 
 $$\forall m \in \mathcal{M}(b_{\text{model}}), \quad \exists m' \in \mathcal{M}(b_{\text{master}}) \quad \text{such that} \quad m = m'$$
 
@@ -120,7 +161,53 @@ $$\text{If } \mathcal{M}(b_{\text{model}}) \not\subseteq \mathcal{M}(b_{\text{ma
 
 ---
 
-## ⚡ ConPTY Virtualization & Asynchronous Stream IPC
+## ⚡ Concurrency Model & Work-Stealing Reactor Pipeline
+
+To prevent threadpool exhaustion and cache degradation under continuous generation load, ResumeForge executes an asynchronous multi-tier reactor pipeline.
+
+```mermaid
+flowchart LR
+    classDef net fill:#0f172a,stroke:#38bdf8,stroke-width:1px,color:#f8fafc;
+    classDef tokio fill:#1e1b4b,stroke:#818cf8,stroke-width:1px,color:#f8fafc;
+    classDef queue fill:#064e3b,stroke:#34d399,stroke-width:1px,color:#f8fafc;
+    classDef mem fill:#311042,stroke:#c084fc,stroke-width:1px,color:#f8fafc;
+
+    subgraph NetworkTier ["Layer 1: Socket Driver & IOCP Reactor"]
+        SocketIngress["Inbound TCP Socket (SO_REUSEADDR)"]:::net
+        MioDriver["Windows MIO / IOCP Event Demultiplexer"]:::net
+        SocketIngress --> MioDriver
+    end
+
+    subgraph SchedulerTier ["Layer 2: Work-Stealing Multi-Thread Engine"]
+        GlobalInjector["Global FIFO Injector Queue (Spinlock Bound)"]:::tokio
+        Core0["Worker Thread 0 (Local Deque: 256 Slots)"]:::tokio
+        Core1["Worker Thread 1 (Local Deque: 256 Slots)"]:::tokio
+        StealingChannel["Chase-Lev Work-Stealing CAS Protocol"]:::tokio
+        MioDriver --> GlobalInjector
+        GlobalInjector --> Core0
+        GlobalInjector --> Core1
+        Core0 <-.-> StealingChannel <-.-> Core1
+    end
+
+    subgraph SerializationTier ["Layer 3: Strict FIFO Queue Barrier"]
+        MPSCQueue["Bounded MPSC Linearization Buffer (Capacity = 128)"]:::queue
+        PipelineMutex["Exclusive Pipeline Worker Token (1 Active Generation)"]:::queue
+        Core0 --> MPSCQueue
+        Core1 --> MPSCQueue
+        MPSCQueue --> PipelineMutex
+    end
+
+    subgraph MemoryTier ["Layer 4: Zero-Copy Execution Architecture"]
+        ArenaAlloc["Linear Bump Allocator (Transient AST Arena)"]:::mem
+        CacheAligned["Cacheline-Aligned Struct Packing (#[repr(C)])"]:::mem
+        ConPTYHandle["ConPTY Overlapped Async Named Pipe"]:::mem
+        PipelineMutex --> ArenaAlloc --> CacheAligned --> ConPTYHandle
+    end
+```
+
+---
+
+## 💻 ConPTY Virtualization & Asynchronous Stream IPC
 
 Rather than relying on high-level HTTP client bindings or unconstrained child processes, ResumeForge interfaces with the Google Antigravity inference engine via low-level **Windows NT Pseudo-Console (ConPTY)** allocation.
 
@@ -162,40 +249,63 @@ stateDiagram-v2
 
     state StreamDrain {
         [*] --> LineBuffering
-        LineBuffering --> FrameDelimiterCheck: Scan for 0x0A (\n)
-        FrameDelimiterCheck --> NDJSONDeser: serde_json::from_slice(&chunk)
-        NDJSONDeser --> SSEBroadcast: event_bus.send(step_update)
-        SSEBroadcast --> LineBuffering
+        LineBuffering --> FrameDelimiterCheck: Scan for 0x0A Linefeed
+        FrameDelimiterCheck --> DeserializingNDJSON: Parse Slice into Structured AST
+        DeserializingNDJSON --> BroadcastingSSE: Dispatch step_update to EventBus
+        BroadcastingSSE --> LineBuffering
     }
 
-    StreamDrain --> ValidationReady: Event == "result"
-    StreamDrain --> WatchdogTimeout: Elapsed > 120s
-    StreamDrain --> ProcessFault: Child ExitCode != 0
+    StreamDrain --> ValidationReady: Receive result Payload
+    StreamDrain --> WatchdogTimeout: Elapsed Timer Exceeds 120s
+    StreamDrain --> ProcessFault: Child Process ExitCode NonZero
 
-    WatchdogTimeout --> ForceTermination: TerminateProcess(hProcess, 0xC00000B5)
+    WatchdogTimeout --> ForceTermination: TerminateProcess(0xC00000B5)
     ProcessFault --> TeardownPty: ClosePseudoConsole(hPC)
     ValidationReady --> TeardownPty: ClosePseudoConsole(hPC)
-    ForceTermination --> TeardownPty: Drain Named Pipes
-    TeardownPty --> [*]: Return GenerationResult<CanonicalAST>
+    ForceTermination --> TeardownPty: Drain Overlapped Named Pipes
+    TeardownPty --> [*]: Emit Canonical Generation Result
 ```
 
 ---
 
 ## 🖨️ Typesetting Engine & Knuth-Plass Dynamic Programming
 
-The typesetting substrate is compiled directly using `Tectonic 0.17.0` (XeTeX engine abstraction). Unlike traditional PDF generation pipelines that execute shells to disk, ResumeForge provides memory-mapped in-memory synthetic filesystems (`VFS`) directly to the core C++ HarfBuzz and TeX engine drivers.
+The typesetting substrate is compiled directly using `Tectonic 0.17.0` (XeTeX engine abstraction). Unlike traditional PDF pipelines that execute shells to disk, ResumeForge provides memory-mapped in-memory synthetic filesystems (`VFS`) directly to the core C++ HarfBuzz and TeX engine drivers.
 
-### Knuth-Plass Line Breaking & Badness Penalties
+### Knuth-Plass Feasible Breakpoint Directed Acyclic Graph (DAG)
 
-Typesetting line breaks are determined through minimization of total badness over a directed acyclic graph (DAG) of feasible breakpoints:
+Line and page breaking are computed as an optimal path search across a DAG of feasible breakpoints:
 
-$$\text{Cost} = \sum_{i=1}^{n} \left( \beta_i + \gamma_i \right)^3 + \Pi_{\text{penalty}}$$
+$$\text{Demerits}(b_i, b_j) = \begin{cases} (1 + 100 \cdot |\rho|^3 + \pi)^2, & \text{if } \rho \ge -1 \\ \infty, & \text{if } \rho < -1 \text{ (overfull box)} \end{cases}$$
 
-Where the badness $\beta$ of an inter-word stretch ratio is:
+Where $\rho$ represents the word-space adjustment ratio.
 
-$$\beta = 100 \cdot \left| \frac{\Delta d}{\text{stretch}} \right|^3$$
+```mermaid
+graph TD
+    classDef opt fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#f8fafc;
+    classDef bp fill:#1e1b4b,stroke:#818cf8,stroke-width:1px,color:#f8fafc;
+    classDef prune fill:#450a0a,stroke:#f87171,stroke-width:1px,color:#f8fafc;
 
-When content exceeds the single-page constraint, the typesetting convergence loop systematically traverses down the structural tree:
+    Node0["Node 0: Paragraph Origin (τ_0)"]:::opt
+    Node1["Node 1: Breakpoint 1 (Line 1, Badness β=12)"]:::bp
+    Node2["Node 2: Breakpoint 2 (Line 1, Badness β=84)"]:::prune
+    Node3["Node 3: Breakpoint 3 (Line 2, Badness β=4)"]:::opt
+    Node4["Node 4: Breakpoint 4 (Line 2, Overfull Glue β=∞)"]:::prune
+    Node5["Node 5: Breakpoint 5 (Line 3, Badness β=2)"]:::opt
+    Node6["Node 6: Breakpoint 6 (Hyphenated β=50 + π_hyphen)"]:::bp
+    Node7["Node 7: Terminal Target vbox (Page Height ≤ 792pt)"]:::opt
+
+    Node0 ==>|"Optimal Path (Cost = 1,728)"| Node1
+    Node0 -.->|"Pruned: Badness High"| Node2
+    Node1 ==>|"Optimal Transition: Min Demerits"| Node3
+    Node1 -.->|"Pruned: Overfull Box"| Node4
+    Node3 ==>|"Lowest Penalty Stretch"| Node5
+    Node3 -.->|"Sub-optimal Penalty"| Node6
+    Node5 ==>|"Knuth-Plass Shortest Path Converged"| Node7
+    Node6 -.-> Node7
+```
+
+### Micro-Compaction Convergence State Sequence
 
 ```mermaid
 sequenceDiagram
@@ -331,8 +441,6 @@ pub struct GenerationFailure {
 ---
 
 ## 🛠️ Verification & Test Harness Execution
-
-The repository contains end-to-end integration and security harnesses covering all failure domains:
 
 ```powershell
 # Execute full formal verification suite (36 Rust Integration Tests)
