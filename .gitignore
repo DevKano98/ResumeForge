@@ -1,0 +1,28 @@
+# Build artifacts
+/target/
+/dist/
+
+# Local tools installed by bootstrap
+/tools/
+
+# Setup state
+.resumeforge-setup.json
+
+# Local runtime data & databases
+/data/
+*.db
+*.db-shm
+*.db-wal
+
+# Temporary build & compile files
+/temp/
+*.pdf
+*.aux
+*.log
+*.out
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

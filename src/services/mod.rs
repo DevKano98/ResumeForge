@@ -1,0 +1,15 @@
+pub mod antigravity;
+pub mod command_runner;
+pub mod event_bus;
+pub mod generation_queue;
+pub mod github;
+pub mod github_indexer;
+pub mod latex;
+pub mod master_parser;
+pub mod pdf;
+pub mod project_search;
+pub mod pty_runner;
+pub mod render_loop;
+pub mod resume_generator;
+pub mod secret_scanner;
+pub mod template_adapt;

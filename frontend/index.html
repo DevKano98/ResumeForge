@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Create Resume — ResumeForge</title><link rel="stylesheet" href="css/app.css"></head>
+<body>
+<header class="app-header"><a href="index.html" class="brand">ResumeForge <span class="brand-badge">Local</span></a><nav class="main-nav"><a class="active" href="index.html">Create</a><a href="history.html">History</a><a href="setup.html">Setup</a><a href="github.html">GitHub</a></nav></header>
+<main class="content-container narrow"><h1 class="page-title">Tailor a resume</h1><p class="help">Your master resume and indexed project evidence are used to generate a one-page PDF.</p>
+<form id="create-form" class="panel form-stack"><label>Company <input name="company" autocomplete="organization"></label><label>Role <input name="role" autocomplete="off"></label><label>Job description <textarea name="job_description" required rows="15"></textarea></label><label>Additional instructions <textarea name="extra_instructions" rows="4"></textarea></label><button class="btn btn-primary" type="submit">Generate resume</button><p id="create-message" role="status"></p></form></main>
+<script src="js/api.js"></script><script src="js/create.js"></script>
+</body>
+</html>

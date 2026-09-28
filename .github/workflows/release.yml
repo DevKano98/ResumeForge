@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Build release binary with MSVC
+        run: cargo build --release --bin resumeforge --target x86_64-pc-windows-msvc
+
+      - name: Package Windows release artifact
+        shell: pwsh
+        run: |
+          $distDir = "dist/resumeforge"
+          New-Item -ItemType Directory -Force -Path $distDir | Out-Null
+          Copy-Item "target/x86_64-pc-windows-msvc/release/resumeforge.exe" -Destination $distDir/
+          Copy-Item -Recurse "frontend" -Destination $distDir/
+          Copy-Item -Recurse "migrations" -Destination $distDir/
+          Copy-Item "README.md" -Destination $distDir/
+          Copy-Item "LICENSE" -Destination $distDir/
+
+          # Create zip
+          $zipPath = "dist/resumeforge-windows-x86_64.zip"
+          Compress-Archive -Path "$distDir/*" -DestinationPath $zipPath -Force
+
+          # Generate SHA256 checksum file
+          $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash.ToLower()
+          $shaContent = "$hash  resumeforge-windows-x86_64.zip"
+          Set-Content -Path "dist/resumeforge-windows-x86_64.zip.sha256" -Value $shaContent
+
+      - name: Publish GitHub Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/resumeforge-windows-x86_64.zip
+            dist/resumeforge-windows-x86_64.zip.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
