@@ -1,4 +1,4 @@
-// api.js — ResumeForge API client utilities
+// frontend/js/api.js — Clean REST client for ResumeForge
 const api = {
   async get(url) {
     const res = await fetch(url);
@@ -48,8 +48,21 @@ const api = {
     return `${proto}//${window.location.host}${path}`;
   },
 
-  getQueryParam(param) {
-    const params = new URLSearchParams(window.location.search);
-    return params.get(param);
-  }
+  // High-level API convenience helpers
+  getSystemStatus: () => api.get('/api/system/status'),
+  getGithubStatus: () => api.get('/api/github/status'),
+  syncGithub: (repos = []) => api.post('/api/github/sync', { repos }),
+  getProjects: () => api.get('/api/projects'),
+  getTemplate: () => api.get('/api/template'),
+  getFacts: () => api.get('/api/template/facts'),
+  getStarters: () => api.get('/api/templates/starters'),
+  saveTemplate: (content, is_starter_template = false, adapted_from_paste = false) =>
+    api.post('/api/template', { content, is_starter_template, adapted_from_paste }),
+  listResumes: () => api.get('/api/resumes'),
+  createResume: (data) => api.post('/api/resumes', data),
+  getResume: (id) => api.get(`/api/resumes/${id}`),
+  getResumeEvents: (id) => api.get(`/api/resumes/${id}/events`),
+  getResumeEvidence: (id) => api.get(`/api/resumes/${id}/evidence`),
+  deleteResume: (id) => api.delete(`/api/resumes/${id}`),
+  regenerateResume: (id) => api.post(`/api/resumes/${id}/regenerate`, {})
 };

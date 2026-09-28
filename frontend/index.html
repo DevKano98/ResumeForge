@@ -1,10 +1,275 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Create Resume — ResumeForge</title><link rel="stylesheet" href="css/app.css"></head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ResumeForge — Local Single-Page Resume Tailoring</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
 <body>
-<header class="app-header"><a href="index.html" class="brand">ResumeForge <span class="brand-badge">Local</span></a><nav class="main-nav"><a class="active" href="index.html">Create</a><a href="history.html">History</a><a href="setup.html">Setup</a><a href="github.html">GitHub</a></nav></header>
-<main class="content-container narrow"><h1 class="page-title">Tailor a resume</h1><p class="help">Your master resume and indexed project evidence are used to generate a one-page PDF.</p>
-<form id="create-form" class="panel form-stack"><label>Company <input name="company" autocomplete="organization"></label><label>Role <input name="role" autocomplete="off"></label><label>Job description <textarea name="job_description" required rows="15"></textarea></label><label>Additional instructions <textarea name="extra_instructions" rows="4"></textarea></label><button class="btn btn-primary" type="submit">Generate resume</button><p id="create-message" role="status"></p></form></main>
-<script src="js/api.js"></script><script src="js/create.js"></script>
+  <div class="app-layout">
+    <!-- Slim Left Navigation -->
+    <aside class="app-sidebar">
+      <div>
+        <div class="brand-block">
+          <div class="brand-title">ResumeForge</div>
+          <span class="brand-badge">Local Engine</span>
+        </div>
+        <nav class="nav-menu" aria-label="Main Navigation">
+          <a href="#/create" class="nav-link active" data-view="create">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"/>
+            </svg>
+            Create
+          </a>
+          <a href="#/history" class="nav-link" data-view="history">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd"/>
+            </svg>
+            History
+          </a>
+          <a href="#/projects" class="nav-link" data-view="projects">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M2 4.75C2 3.784 2.784 3 3.75 3h4.879c.464 0 .91.184 1.238.513l1.62 1.62H16.25c.966 0 1.75.784 1.75 1.75v8.375c0 .966-.784 1.75-1.75 1.75H3.75A1.75 1.75 0 012 15.25V4.75z" clip-rule="evenodd"/>
+            </svg>
+            Projects
+          </a>
+          <a href="#/settings" class="nav-link" data-view="settings">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+            </svg>
+            Settings
+          </a>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="system-status-indicator">
+          <span id="nav-sys-dot" class="status-dot-sm green"></span>
+          <span id="nav-sys-label">Engine Ready</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Panels -->
+    <main class="app-main" id="app-main">
+      
+      <!-- VIEW 1: CREATE SCREEN -->
+      <section id="view-create" class="view-section">
+        <div class="view-topbar">
+          <div>
+            <h1 class="view-heading">Tailor a resume</h1>
+            <p class="view-subheading">Generate an evidence-grounded, single-page resume for any job posting.</p>
+          </div>
+        </div>
+
+        <div class="content-container narrow-container">
+          <!-- Setup Required Banner (locked state) -->
+          <div id="create-lock-banner" class="alert-banner" style="display:none;">
+            <div>
+              <strong id="lock-missing-title">Setup Incomplete:</strong>
+              <span id="lock-missing-text">Complete setup checklist before generating.</span>
+            </div>
+            <button id="btn-open-wizard" class="btn btn-secondary btn-sm">Open Setup Wizard</button>
+          </div>
+
+          <form id="form-create-resume" class="card-panel">
+            <div class="create-grid">
+              <div class="form-field">
+                <label class="form-label" for="create-company">Company</label>
+                <input type="text" id="create-company" class="form-input" placeholder="e.g. Cloudflare (auto-detected on paste)" autocomplete="organization">
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="create-role">Target Role</label>
+                <input type="text" id="create-role" class="form-input" placeholder="e.g. Senior Systems Engineer" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label class="form-label" for="create-jd">Job Description</label>
+              <textarea id="create-jd" class="form-textarea" required rows="14" placeholder="Paste the complete job description here (responsibilities, requirements, qualifications)..."></textarea>
+            </div>
+
+            <!-- Extra instructions collapsed by default -->
+            <details class="instructions-details">
+              <summary class="instructions-summary">Extra instructions (optional)</summary>
+              <div class="form-field mt-3">
+                <textarea id="create-extra" class="form-input" rows="3" placeholder="Focus areas, emphasis, or special constraints (e.g. emphasize distributed systems, prioritize Go and Rust projects)..."></textarea>
+              </div>
+            </details>
+
+            <div class="create-action-area">
+              <button id="btn-generate-resume" type="submit" class="btn btn-primary btn-large">Generate resume</button>
+              <div id="create-button-help" class="create-btn-hint"></div>
+              <a id="btn-replay-demo" class="replay-subtle-link" href="#/run/demo">Want to see how it works first? Replay a demo run</a>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- VIEW 2: RUN VIEW (THE CANVAS) -->
+      <section id="view-run" class="view-section" style="display:none;">
+        <div class="view-topbar">
+          <div>
+            <h2 class="view-heading" id="run-title">Generation Timeline</h2>
+            <p class="view-subheading" id="run-subtitle">Live Orchestration Canvas</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- Replay controls (visible only in demo mode) -->
+            <div id="run-replay-controls" class="flex items-center gap-2" style="display:none;">
+              <span class="text-muted" style="font-size:12px;">Speed:</span>
+              <select id="replay-speed-select" class="form-input" style="padding:4px 8px; font-size:12px;">
+                <option value="0.5">0.5x</option>
+                <option value="1.0" selected>1.0x</option>
+                <option value="2.0">2.0x</option>
+                <option value="5.0">5.0x</option>
+                <option value="10.0">10.0x</option>
+              </select>
+              <button id="btn-replay-pause" class="btn btn-secondary btn-sm">Pause</button>
+              <button id="btn-replay-restart" class="btn btn-secondary btn-sm">Restart</button>
+            </div>
+            <a href="#/create" class="btn btn-secondary btn-sm">New Resume</a>
+          </div>
+        </div>
+
+        <div id="canvas-container">
+          <!-- CanvasController mounts SVG, drawer, and result panel here -->
+        </div>
+      </section>
+
+      <!-- VIEW 3: HISTORY SCREEN -->
+      <section id="view-history" class="view-section" style="display:none;">
+        <div class="view-topbar">
+          <div>
+            <h1 class="view-heading">Generation History</h1>
+            <p class="view-subheading">View previously generated resumes and inspect their evidence timelines.</p>
+          </div>
+          <a href="#/create" class="btn btn-primary btn-sm">Create Resume</a>
+        </div>
+
+        <div class="content-container">
+          <div class="card-panel" style="padding:0; overflow:hidden;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Company</th>
+                  <th>Target Role</th>
+                  <th>Status</th>
+                  <th>Pages</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="history-empty-card" class="empty-state-card" style="display:none;">
+            <h3 class="empty-title">No resumes generated yet</h3>
+            <p class="empty-desc">When you generate a resume, it will appear here with its full canvas timeline, verified claims, and PDF downloads.</p>
+            <a href="#/create" class="btn btn-primary">Create your first resume</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: PROJECTS SCREEN -->
+      <section id="view-projects" class="view-section" style="display:none;">
+        <div class="view-topbar">
+          <div>
+            <h1 class="view-heading">Indexed Projects</h1>
+            <p class="view-subheading">GitHub repositories scanned for technical architecture facts and code evidence.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="projects-sync-status" class="text-muted" style="font-size:12px;"></span>
+            <button id="btn-sync-projects" class="btn btn-secondary btn-sm">Sync with GitHub</button>
+          </div>
+        </div>
+
+        <div class="content-container">
+          <div id="projects-grid" class="projects-grid">
+            <!-- Dynamically populated -->
+          </div>
+
+          <div id="projects-empty-card" class="empty-state-card" style="display:none;">
+            <h3 class="empty-title">No repositories indexed yet</h3>
+            <p class="empty-desc">Connect your GitHub account in Settings and click 'Sync with GitHub' to index your code for verifiable evidence.</p>
+            <a href="#/settings" class="btn btn-secondary">Go to Settings</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 5: SETTINGS SCREEN -->
+      <section id="view-settings" class="view-section" style="display:none;">
+        <div class="view-topbar">
+          <div>
+            <h1 class="view-heading">Settings & System Status</h1>
+            <p class="view-subheading">Manage your master resume facts, tool readiness, and account connections.</p>
+          </div>
+          <button onclick="window.wizardController.openWizard(true)" class="btn btn-secondary btn-sm">First-run checklist</button>
+        </div>
+
+        <div class="content-container">
+          <!-- Section 1: System Readiness -->
+          <div class="card-panel">
+            <h2 class="card-title">System & Tool Readiness</h2>
+            <p class="card-desc">Status of all local portable dependencies and services.</p>
+            <div id="settings-system-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Section 2: Master Resume & Extracted Facts -->
+          <div class="card-panel">
+            <h2 class="card-title">Master Resume & Extracted Facts</h2>
+            <p class="card-desc">Your ground truth candidate facts deterministically parsed from your active master LaTeX resume.</p>
+            
+            <div id="settings-facts-container">
+              <!-- Dynamically populated with parsed facts -->
+            </div>
+
+            <div class="mt-3">
+              <strong style="display:block; font-size:13px; margin-bottom:8px;">Starter Templates</strong>
+              <div id="settings-starters" class="flex flex-wrap"></div>
+            </div>
+
+            <details class="instructions-details mt-3">
+              <summary class="instructions-summary">View or edit master LaTeX source (.tex)</summary>
+              <div class="form-field mt-3">
+                <textarea id="settings-latex-source" class="form-textarea" rows="12" style="font-family:var(--font-mono); font-size:12px;"></textarea>
+                <div class="mt-3">
+                  <button id="btn-save-master-latex" class="btn btn-primary btn-sm">Save Master Resume</button>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <!-- Section 3: GitHub Account Connection -->
+          <div class="card-panel">
+            <h2 class="card-title">GitHub Connection & Privacy</h2>
+            <p class="card-desc">Local repositories are scanned with Gitleaks before indexing. Secrets are never indexed.</p>
+            <div id="settings-gh-status">
+              <p class="text-muted">Loading GitHub status...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- First-Run Wizard Overlay (Full Screen) -->
+  <div id="wizard-overlay" class="wizard-overlay" aria-hidden="true">
+    <!-- Populated by WizardController -->
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/labels.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/replay.js"></script>
+  <script src="js/canvas.js"></script>
+  <script src="js/wizard.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

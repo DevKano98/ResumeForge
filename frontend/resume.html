@@ -2,126 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ResumeForge — Orchestration Canvas</title>
-  <link rel="stylesheet" href="css/app.css">
+  <title>Redirecting to Run View...</title>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    if (id) {
+      window.location.replace("index.html#/run/" + encodeURIComponent(id));
+    } else {
+      window.location.replace("index.html#/create");
+    }
+  </script>
 </head>
 <body>
-  <header class="app-header">
-    <a href="index.html" class="brand">
-      <span>ResumeForge</span>
-      <span class="brand-badge">Local-First</span>
-    </a>
-    <nav class="main-nav">
-      <a href="index.html">Create</a>
-      <a href="history.html">History</a>
-      <a href="setup.html">Setup & Health</a>
-      <a href="github.html">GitHub</a>
-    </nav>
-  </header>
-
-  <main class="content-container">
-    <div class="page-topbar">
-      <div class="title-group">
-        <h1 class="page-title" id="resume-title">Resume #<span id="display-id">--</span></h1>
-        <span class="status-badge queued" id="resume-status-badge">Loading...</span>
-        <span class="status-badge disconnected" id="ws-status-badge">WS: Disconnected</span>
-      </div>
-      <div class="btn-group">
-        <a id="btn-view-pdf" href="#" target="_blank" class="btn btn-primary" style="display:none;">View PDF</a>
-        <a id="btn-view-tex" href="#" target="_blank" class="btn btn-secondary" style="display:none;">View LaTeX</a>
-        <button id="btn-regenerate" class="btn btn-secondary" type="button">Regenerate</button>
-        <button id="btn-reconnect" class="btn btn-secondary">Reconnect WS</button>
-      </div>
-    </div>
-
-    <p id="resume-error" role="status"></p>
-    <section class="panel" id="evidence-panel" hidden><h2>Evidence review</h2><div id="evidence-summary"></div><div id="evidence-rejected" class="item-list"></div></section>
-
-    <svg id="pipeline-graph" viewBox="0 0 760 130" role="img" aria-label="Generation pipeline: job analysis, project retrieval, content generation, evidence validation, render and compile">
-      <path class="graph-edge" data-after="jd_analysis" d="M140 58 H165"/><path class="graph-edge" data-after="project_retrieval" d="M290 58 H315"/><path class="graph-edge" data-after="content_generation" d="M440 58 H465"/><path class="graph-edge" data-after="evidence_validation" d="M590 58 H615"/>
-      <g class="graph-node" data-node="jd_analysis"><rect x="10" y="28" width="130" height="60" rx="8"/><text x="75" y="62">Job analysis</text></g>
-      <g class="graph-node" data-node="project_retrieval"><rect x="165" y="28" width="125" height="60" rx="8"/><text x="227" y="62">Projects</text></g>
-      <g class="graph-node" data-node="content_generation"><rect x="315" y="28" width="125" height="60" rx="8"/><text x="377" y="62">Generate</text></g>
-      <g class="graph-node" data-node="evidence_validation"><rect x="465" y="28" width="125" height="60" rx="8"/><text x="527" y="62">Validate</text></g>
-      <g class="graph-node" data-node="render_compile"><rect x="615" y="28" width="135" height="60" rx="8"/><text x="682" y="62">Render PDF</text></g>
-    </svg>
-
-    <div class="canvas-layout">
-      <!-- Left: Pipeline Nodes -->
-      <div class="node-card">
-        <div class="card-header">
-          <span>Agent Pipeline</span>
-          <span style="font-size:0.75rem; color:var(--text-muted);">5 Stages</span>
-        </div>
-        <ul class="node-list" id="pipeline-nodes">
-          <li class="node-item" data-node="jd_analysis">
-            <div class="node-info">
-              <span class="node-title">1. JD Analyzer</span>
-              <span class="node-subtext">Keywords, skills, & concepts</span>
-            </div>
-            <span class="node-pill idle" id="pill-jd_analysis">idle</span>
-          </li>
-          <li class="node-item" data-node="project_retrieval">
-            <div class="node-info">
-              <span class="node-title">2. Project Retrieval</span>
-              <span class="node-subtext">Overlap scoring & ranking</span>
-            </div>
-            <span class="node-pill idle" id="pill-project_retrieval">idle</span>
-          </li>
-          <li class="node-item" data-node="content_generation">
-            <div class="node-info">
-              <span class="node-title">3. Content Generation</span>
-              <span class="node-subtext">Antigravity AI (Headless PTY)</span>
-            </div>
-            <span class="node-pill idle" id="pill-content_generation">idle</span>
-          </li>
-          <li class="node-item" data-node="evidence_validation">
-            <div class="node-info">
-              <span class="node-title">4. Evidence Validator</span>
-              <span class="node-subtext">Evidence IDs grounding check</span>
-            </div>
-            <span class="node-pill idle" id="pill-evidence_validation">idle</span>
-          </li>
-          <li class="node-item" data-node="render_compile">
-            <div class="node-info">
-              <span class="node-title">5. Render & Compile</span>
-              <span class="node-subtext">LaTeX render, Tectonic, page check</span>
-            </div>
-            <span class="node-pill idle" id="pill-render_compile">idle</span>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Right: Live Scrolling Console -->
-      <div class="console-card">
-        <div class="console-header">
-          <div style="font-weight:600; font-size:0.875rem;">
-            Live Orchestration Console (<span id="event-count">0</span> events)
-          </div>
-          <div class="console-actions">
-            <label class="toggle-label">
-              <input type="checkbox" id="chk-autoscroll" checked>
-              <span>Autoscroll</span>
-            </label>
-            <button id="btn-clear-console" class="btn btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Clear</button>
-          </div>
-        </div>
-        <div class="console-body" id="console-body">
-          <div class="log-entry command_started">
-            <div class="log-meta">
-              <span class="meta-seq">#0</span>
-              <span class="meta-node">system</span>
-              <span class="meta-type command_started">system_ready</span>
-            </div>
-            <div class="log-content">Connecting to live event bus stream...</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <script src="js/api.js"></script>
-  <script src="js/canvas.js"></script>
+  <p>Redirecting to <a href="index.html#/create">ResumeForge</a>...</p>
 </body>
 </html>
