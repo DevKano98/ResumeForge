@@ -18,71 +18,76 @@ flowchart TD
     classDef typeset fill:#451a03,stroke:#fb923c,stroke-width:1px,color:#f8fafc;
     classDef storage fill:#18181b,stroke:#71717a,stroke-width:1px,color:#f8fafc;
 
-    subgraph Tier0 ["Presentation & Telemetry Tier (Non-Blocking Reactive Stream)"]
-        SPA["Vanilla DOM DAG (No Virtual DOM / Zero-Allocation)"]:::client
-        SSEBus["WSS / SSE Event Demux (Broadcast Channel: cap=256)"]:::client
-        Reducer["Deterministic State Reducer (Pure Functional Monad)"]:::client
-        SPA <--> Reducer
-        SSEBus --> Reducer
+    subgraph T0 ["Tier 0: Presentation & Telemetry"]
+        UI["Reactive Web UI (Vanilla JS DAG)"]:::client
+        SSE["WSS / SSE Event Demux (Broadcast cap=256)"]:::client
+        Reducer["Deterministic State Reducer (Pure Monad)"]:::client
+        UI --> Reducer
+        SSE --> Reducer
     end
 
-    subgraph Tier1 ["Security Perimeter & Ingress Invariant Kernel"]
-        SocketIngress["TCP Socket Ingress (SO_REUSEADDR / 127.0.0.1)"]:::ingress
-        HostValidation["Host Header Boundary (Mitigates DNS Rebinding & Pivoting)"]:::ingress
-        OriginVerification["CORS / CSRF / CSWSH Invariant Enforcement"]:::ingress
-        BufferFloor["Strict Request Ceiling (512 KiB Payload Max Bound)"]:::ingress
-        SocketIngress --> HostValidation --> OriginVerification --> BufferFloor
+    subgraph T1 ["Tier 1: Ingress Security Perimeter"]
+        Ingress["TCP Socket Ingress (127.0.0.1:3000)"]:::ingress
+        HostCheck["Host Header Boundary (Anti-DNS Rebinding)"]:::ingress
+        OriginCheck["CORS / CSRF / CSWSH Invariant Guard"]:::ingress
+        Ceiling["512 KiB Payload Ceiling Bound"]:::ingress
+        Ingress --> HostCheck --> OriginCheck --> Ceiling
     end
 
-    subgraph Tier2 ["Concurrency Reactor & Task Scheduling Kernel"]
-        WorkerPool["Tokio Asynchronous Multi-Thread Scheduler (Work-Stealing Deque)"]:::runtime
-        FIFOQueue["Bounded MPSC Linearization Channel (Bound=128)"]:::runtime
-        LockFreeMut["Atomic Process State Mutex (CAS Loop)"]:::runtime
-        BufferFloor --> FIFOQueue --> WorkerPool --> LockFreeMut
+    subgraph T2 ["Tier 2: Concurrency & Linearization Kernel"]
+        WorkerPool["Tokio Async Scheduler (Work-Stealing)"]:::runtime
+        Queue["Linearization MPSC Queue (Bound=128)"]:::runtime
+        WorkerToken["Exclusive Pipeline Lock (1 Active Task)"]:::runtime
+        Ceiling --> Queue --> WorkerPool --> WorkerToken
     end
 
-    subgraph Tier3 ["Information Retrieval & Knowledge Graph Engine"]
-        JDTokenizer["Deterministic Lexical AST Scanner (PikeVM / RegexSet)"]:::engine
-        FTS5Engine["In-Memory BM25 Okapi Vector Search (SQLite FTS5)"]:::engine
-        SecretScanner["Gitleaks Ring-3 Subprocess Sandbox (SARIF Engine)"]:::engine
-        RepoCache["Shallow Cloned Object Tree (HEAD-Only Shas)"]:::engine
-        WorkerPool --> JDTokenizer --> FTS5Engine
-        FTS5Engine <--> RepoCache
-        RepoCache --> SecretScanner
+    subgraph T3 ["Tier 3: Information Retrieval & Evidence AST"]
+        JDToken["JD Lexical Analyzer (PikeVM / RegexSet)"]:::engine
+        BM25["In-Memory BM25 Ranking (SQLite FTS5)"]:::engine
+        GitleaksScan["Gitleaks Ring-3 Subprocess Sandbox"]:::engine
+        WorkerToken --> JDToken --> BM25 --> GitleaksScan
     end
 
-    subgraph Tier4 ["Out-of-Process Virtualized Generative Engine"]
-        ConPtyCore["Windows NT ConPTY Pseudo-Console Allocator"]:::runtime
-        AsyncPipe["Overlapped Asynchronous Pipe Stream (hInput/hOutput)"]:::runtime
-        AgySubprocess["Antigravity Process Subtree (JOBOBJECT Limits)"]:::runtime
-        Watchdog["Asynchronous Epoll/IOCP Watchdog Timer (T_max = 120s)"]:::runtime
-        WorkerPool --> ConPtyCore --> AsyncPipe <--> AgySubprocess
-        Watchdog -.->|"SIGKILL / TerminateProcess"| AgySubprocess
+    subgraph T4 ["Tier 4: ConPTY Virtualization Subsystem"]
+        ConPTY["Windows NT ConPTY Pseudo-Console"]:::runtime
+        AsyncPipe["Overlapped Async Pipe (Raw NDJSON)"]:::runtime
+        ChildProcess["Antigravity Subprocess (agy.exe)"]:::runtime
+        Watchdog["IOCP Async Watchdog Timer (120s SLA)"]:::runtime
+        GitleaksScan --> ConPTY --> AsyncPipe <--> ChildProcess
+        Watchdog -.->|"Kill on Timeout"| ChildProcess
     end
 
-    subgraph Tier5 ["Deterministic Truth Guard & Lattice Validation Kernel"]
-        ProofLattice["Galois Connection & Knowledge Lattice L = ⟨S, ⊑⟩"]:::engine
-        MetricsGuard["AST Metric Extraction & Equivalence Prover"]:::engine
-        VocabGuard["Closed Vocabulary Filter (Levenshtein-0 Set Membership)"]:::engine
-        AsyncPipe --> ProofLattice --> MetricsGuard --> VocabGuard
+    subgraph T5 ["Tier 5: Deterministic Truth Guard Kernel"]
+        ProofLattice["Galois Knowledge Lattice L = (S, <=)"]:::engine
+        MetricGuard["AST Metric Extraction & Equivalence Prover"]:::engine
+        VocabFilter["Closed Vocabulary Filter (Levenshtein-0)"]:::engine
+        AsyncPipe --> ProofLattice --> MetricGuard --> VocabFilter
     end
 
-    subgraph Tier6 ["Typesetting Engine & Knuth-Plass Layout Loop"]
-        ASTHydration["AST-to-TeX Syntax Transformation Engine"]:::typeset
-        TectonicKernel["Embedded Tectonic XeTeX Engine (In-Memory VFS)"]:::typeset
-        PageAnalyzer["Bounding Box & Overfull / Underfull vbox Analyzer"]:::typeset
-        MicroCompaction["Iterative Shrink State Machine (Passes 1..4)"]:::typeset
-        VocabGuard --> ASTHydration --> MicroCompaction
-        MicroCompaction --> TectonicKernel --> PageAnalyzer
-        PageAnalyzer -- "vbox > 792pt" --> MicroCompaction
+    subgraph T6 ["Tier 6: Typesetting & Micro-Compaction"]
+        ASTHydrate["AST-to-TeX Syntax Transformation Engine"]:::typeset
+        TectonicEngine["Embedded Tectonic XeTeX Engine (In-Memory VFS)"]:::typeset
+        BoxCheck["PDF Page Box Metric Analyzer"]:::typeset
+        CompactionSM["Compaction State Machine (Passes 1..4)"]:::typeset
+        VocabFilter --> ASTHydrate --> CompactionSM
+        CompactionSM --> TectonicEngine --> BoxCheck
+        BoxCheck -- "Height > 792pt" --> CompactionSM
     end
 
-    subgraph Tier7 ["Storage Architecture & Atomicity Engine"]
-        SQLiteEngine[("SQLite 3.45 (Write-Ahead Logging / PRAGMA foreign_keys=1)")]:::storage
-        ArtifactStore[("Zero-Copy Memory-Mapped Buffer Storage")]:::storage
-        PageAnalyzer -- "vbox ≤ 792pt" --> ArtifactStore
-        ProofLattice -.-> SQLiteEngine
+    subgraph T7 ["Tier 7: Local Persistence & Artifact Storage"]
+        SQLiteDB[("SQLite 3.45 (WAL Mode / PRAGMA foreign_keys=1)")]:::storage
+        DiskArtifact[("Single-Page PDF & Canonical TeX Snapshot")]:::storage
+        BoxCheck -- "Height <= 792pt" --> DiskArtifact
+        ProofLattice -.-> SQLiteDB
     end
+
+    T0 --> T1
+    T1 --> T2
+    T2 --> T3
+    T3 --> T4
+    T4 --> T5
+    T5 --> T6
+    T6 --> T7
 ```
 
 ---
@@ -100,7 +105,7 @@ flowchart TD
     classDef lattice fill:#022c22,stroke:#34d399,stroke-width:1px,color:#f8fafc;
     classDef reject fill:#450a0a,stroke:#f87171,stroke-width:1px,color:#f8fafc;
 
-    subgraph ConcreteDomain ["Concrete Evidence Domain: C = ⟨P(Facts), ⊆⟩"]
+    subgraph ConcreteDomain ["Concrete Evidence Domain: C = (Facts, Subsets)"]
         MasterFacts["Master Resume Fact AST (K_master)"]:::concrete
         GitCodebase["Verified Git Abstract Syntax Trees (E_git)"]:::concrete
         ConcreteSpace["Concrete Observable Invariants Space"]:::concrete
@@ -108,27 +113,27 @@ flowchart TD
         GitCodebase --> ConcreteSpace
     end
 
-    subgraph GaloisBridge ["Galois Adjunction: ⟨C, α, γ, A⟩"]
-        Alpha["α: Abstraction Function (Concrete to Bounded Semantic Types)"]:::bridge
-        Gamma["γ: Concretization Function (Abstract Properties to Grounded Sets)"]:::bridge
-        ConcreteSpace -- "α (Abstraction)" --> AbstractDomain
-        AbstractDomain -- "γ (Concretization)" --> ConcreteSpace
+    subgraph GaloisBridge ["Galois Adjunction: (C, Alpha, Gamma, A)"]
+        Alpha["Alpha: Abstraction (Concrete to Bounded Semantic Types)"]:::bridge
+        Gamma["Gamma: Concretization (Abstract Properties to Grounded Sets)"]:::bridge
+        ConcreteSpace -- "Alpha (Abstraction)" --> AbstractDomain
+        AbstractDomain -- "Gamma (Concretization)" --> ConcreteSpace
     end
 
-    subgraph AbstractDomain ["Abstract Proof Lattice: A = ⟨L, ⊑, ⊔, ⊓, ⊥, ⊤⟩"]
-        Top["⊤ : Unconstrained Stochastic Output Space"]:::lattice
-        TechSemilattice["U_allowable : Closed Technology Semilattice"]:::lattice
-        MetricIntervals["M_bounded : Extracted Scalar Interval Domain"]:::lattice
-        HistoryPowerSet["E_grounded : Employer & Chronology Equivalence Classes"]:::lattice
-        Bottom["⊥ : Inadmissible Proposition State (evidence.json rejected[])"]:::reject
+    subgraph AbstractDomain ["Abstract Proof Lattice: A = (L, Order, Join, Meet, Bot, Top)"]
+        TopNode["Top: Unconstrained Stochastic Output Space"]:::lattice
+        TechSemilattice["U_allowable: Closed Technology Semilattice"]:::lattice
+        MetricIntervals["M_bounded: Extracted Scalar Interval Domain"]:::lattice
+        HistoryPowerSet["E_grounded: Employer & Chronology Equivalence Classes"]:::lattice
+        BotNode["Bottom: Inadmissible Proposition State (rejected claims)"]:::reject
 
-        Top --> TechSemilattice
-        Top --> MetricIntervals
-        Top --> HistoryPowerSet
+        TopNode --> TechSemilattice
+        TopNode --> MetricIntervals
+        TopNode --> HistoryPowerSet
 
-        TechSemilattice -- "Term ∉ U_allowable" --> Bottom
-        MetricIntervals -- "Scalar ∉ MasterHighlight" --> Bottom
-        HistoryPowerSet -- "Company ∉ MasterHistory" --> Bottom
+        TechSemilattice -- "Term Not in Allowed Set" --> BotNode
+        MetricIntervals -- "Scalar Not in Master Highlight" --> BotNode
+        HistoryPowerSet -- "Company Not in Master History" --> BotNode
     end
 ```
 
@@ -166,7 +171,7 @@ $$\text{If } \mathcal{M}(b_{\text{model}}) \not\subseteq \mathcal{M}(b_{\text{ma
 To prevent threadpool exhaustion and cache degradation under continuous generation load, ResumeForge executes an asynchronous multi-tier reactor pipeline.
 
 ```mermaid
-flowchart LR
+flowchart TD
     classDef net fill:#0f172a,stroke:#38bdf8,stroke-width:1px,color:#f8fafc;
     classDef tokio fill:#1e1b4b,stroke:#818cf8,stroke-width:1px,color:#f8fafc;
     classDef queue fill:#064e3b,stroke:#34d399,stroke-width:1px,color:#f8fafc;
@@ -203,6 +208,10 @@ flowchart LR
         ConPTYHandle["ConPTY Overlapped Async Named Pipe"]:::mem
         PipelineMutex --> ArenaAlloc --> CacheAligned --> ConPTYHandle
     end
+
+    NetworkTier --> SchedulerTier
+    SchedulerTier --> SerializationTier
+    SerializationTier --> MemoryTier
 ```
 
 ---
@@ -286,14 +295,14 @@ graph TD
     classDef bp fill:#1e1b4b,stroke:#818cf8,stroke-width:1px,color:#f8fafc;
     classDef prune fill:#450a0a,stroke:#f87171,stroke-width:1px,color:#f8fafc;
 
-    Node0["Node 0: Paragraph Origin (τ_0)"]:::opt
-    Node1["Node 1: Breakpoint 1 (Line 1, Badness β=12)"]:::bp
-    Node2["Node 2: Breakpoint 2 (Line 1, Badness β=84)"]:::prune
-    Node3["Node 3: Breakpoint 3 (Line 2, Badness β=4)"]:::opt
-    Node4["Node 4: Breakpoint 4 (Line 2, Overfull Glue β=∞)"]:::prune
-    Node5["Node 5: Breakpoint 5 (Line 3, Badness β=2)"]:::opt
-    Node6["Node 6: Breakpoint 6 (Hyphenated β=50 + π_hyphen)"]:::bp
-    Node7["Node 7: Terminal Target vbox (Page Height ≤ 792pt)"]:::opt
+    Node0["Node 0: Paragraph Origin (Tau 0)"]:::opt
+    Node1["Node 1: Breakpoint 1 (Line 1, Badness B=12)"]:::bp
+    Node2["Node 2: Breakpoint 2 (Line 1, Badness B=84)"]:::prune
+    Node3["Node 3: Breakpoint 3 (Line 2, Badness B=4)"]:::opt
+    Node4["Node 4: Breakpoint 4 (Line 2, Overfull Glue Infinity)"]:::prune
+    Node5["Node 5: Breakpoint 5 (Line 3, Badness B=2)"]:::opt
+    Node6["Node 6: Breakpoint 6 (Hyphenated B=50 + Penalty)"]:::bp
+    Node7["Node 7: Terminal Target vbox (Page Height <= 792pt)"]:::opt
 
     Node0 ==>|"Optimal Path (Cost = 1,728)"| Node1
     Node0 -.->|"Pruned: Badness High"| Node2
